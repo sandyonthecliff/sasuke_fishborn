@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="color-scheme" content="only light">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>フィッシュボーン</title>
+<style>
+:root{color-scheme:only light}
+html,body{margin:0;height:100%;overflow:hidden;background:#3b2a1a;font-family:system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}
+canvas{display:block;width:100%;height:100%}
+#hud{z-index:5;position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));text-align:right;pointer-events:none;filter:drop-shadow(0 3px 6px #000)}
+#tm{position:relative;padding:10px 12px;border-radius:9px;border:3px solid #4a4538;background:radial-gradient(circle at 7px 7px,#f6f3e8 0 1.5px,#7a735f 3px,transparent 3.6px),radial-gradient(circle at calc(100% - 7px) 7px,#f6f3e8 0 1.5px,#7a735f 3px,transparent 3.6px),radial-gradient(circle at 7px calc(100% - 7px),#f6f3e8 0 1.5px,#7a735f 3px,transparent 3.6px),radial-gradient(circle at calc(100% - 7px) calc(100% - 7px),#f6f3e8 0 1.5px,#7a735f 3px,transparent 3.6px),linear-gradient(145deg,#d9d3c3 0%,#a29b86 38%,#cfc8b3 52%,#7f7863 100%);box-shadow:inset 0 2px 1px rgba(255,255,255,.65),inset 0 -3px 4px rgba(0,0,0,.4),0 3px 6px rgba(0,0,0,.55)}
+#tmi{background:#000;border:4px solid #3a362b;border-radius:5px;padding:6px 10px;box-shadow:inset 0 0 8px #000,0 1px 0 rgba(255,255,255,.45);line-height:0}
+#tmsvg{display:block;width:128px;height:auto}
+@media (max-width:600px),(pointer:coarse){#tmsvg{width:64px}#tm{padding:5px 6px;border-width:2px;border-radius:5px}#tmi{padding:3px 5px;border-width:2px}}
+#gas{position:fixed;left:0;top:0;pointer-events:none;z-index:4}
+#sb{position:fixed;right:calc(6px + env(safe-area-inset-right,0px));top:50%;transform:translateY(-50%);z-index:5;display:flex;flex-direction:column;align-items:center;gap:4px;font-size:12px;text-shadow:0 1px 3px #000;pointer-events:none}
+#sbt{position:relative;width:44px;height:150px;margin:16px 0;touch-action:none;pointer-events:auto}
+#sbt::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:6px;margin-left:-3px;background:rgba(255,255,255,.4);border-radius:3px}
+#sbk{position:absolute;left:50%;top:0%;width:24px;height:24px;margin:-12px 0 0 -12px;border-radius:50%;background:#fff;border:3px solid #c4161c;box-sizing:border-box}
+#bk{position:fixed;left:calc(8px + env(safe-area-inset-left,0px));top:calc(8px + env(safe-area-inset-top,0px));z-index:5;display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-shadow:0 1px 3px #000}
+#back{font-size:14px;padding:6px 12px;border-width:2px;border-radius:10px;opacity:.92}
+#cn{font-size:12px;font-weight:700;letter-spacing:.05em;background:rgba(0,0,0,.55);padding:2px 8px;border-radius:6px}
+body.title #btns,body.title #sb,body.title #hud,body.title #bk{display:none}
+#tt{position:fixed;inset:0;z-index:8;overflow:auto;display:flex;justify-content:center;align-items:center;background:radial-gradient(ellipse at 50% 25%,rgba(150,12,20,.5),rgba(30,0,4,.72) 75%);padding:16px;box-sizing:border-box}
+#ttw{width:min(560px,100%);text-align:center;margin:auto}
+#tth{margin:0 0 4px;font-size:clamp(40px,11vw,72px);font-weight:900;font-style:italic;letter-spacing:.04em;line-height:1;text-shadow:0 4px 0 #6d0a10,0 8px 18px rgba(0,0,0,.6)}
+#tth small{display:block;font-size:clamp(13px,3.6vw,20px);font-style:normal;letter-spacing:.5em;margin-top:8px;color:#ffd6d6}
+.sec{margin:18px 0 8px;font-size:13px;font-weight:800;letter-spacing:.3em;color:#ff8a8f}
+#cg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cc{aspect-ratio:1/1.05;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:12px;padding:4px;border:2px solid #7d2a2f;border-radius:10px;background:linear-gradient(#3a0a0e,#1c0306);color:#fff}
+.cc i{font-style:normal;font-size:11px;color:#ff9a9e;letter-spacing:.1em}
+.cc b{font-size:13px;word-break:break-all}
+.cc.on{border-color:#ffe14d;box-shadow:0 0 14px rgba(255,225,77,.6);background:linear-gradient(#c4161c,#6d0a10)}
+.cc.lk{opacity:.45;border-style:dashed;cursor:default}
+.cc.lk b{font-size:10px;letter-spacing:.1em}
+#md{position:relative;display:flex;width:min(480px,100%);height:50px;margin:0 auto;border-radius:25px;border:3px solid #fff;background:#1a0204;overflow:hidden}
+#md::before{content:"";position:absolute;top:0;bottom:0;left:0;width:33.333%;background:#c4161c;border-radius:22px;transition:transform .2s}
+#md.p1::before{transform:translateX(100%)}
+#md.p2::before{transform:translateX(200%)}
+#md button{position:relative;flex:1;background:none;border:0;font-size:13px;line-height:1.15;padding:0 4px;border-radius:0}
+#go{margin-top:22px;padding:14px 64px;font-size:28px;letter-spacing:.15em}
+#hint{margin:10px 0 0;font-size:15px;line-height:1.6;color:#ffd6d6;min-height:1.6em}
+#mesh{position:fixed;inset:0;z-index:2;pointer-events:none;display:none}
+#mesh.vol{backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px)}
+#mdd{white-space:pre-line;margin-top:8px;font-size:14px;line-height:1.5;color:#ffd6d6;min-height:1.5em}
+#btns{z-index:5;position:fixed;left:0;right:0;bottom:0;padding:12px 12px calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:12px}
+button{font-family:inherit;font-size:26px;font-weight:700;color:#fff;background:#c4161c;border:3px solid #fff;border-radius:14px;cursor:pointer;touch-action:manipulation}
+button:active{background:#8e0f14}
+#btns button{flex:1;height:84px;opacity:.92}
+#ov{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(70,0,0,.65);text-align:center;padding:20px}
+#ov h1{font-size:44px;margin:0 0 12px;text-shadow:0 3px 6px #000}
+#ov p{font-size:18px;line-height:1.6;margin:0 0 22px;white-space:pre-line}
+.hide{display:none!important}
+#ov.ghost{background:transparent;align-items:flex-start;pointer-events:none}
+#ov.ghost>div{pointer-events:auto;background:rgba(70,0,0,.85);border-radius:14px;padding:10px 24px;margin-top:80px}
+#ov.ghost h1{font-size:30px;margin:0 0 4px}
+#ov.ghost p{font-size:15px;margin:0 0 10px}
+#b1{background:#1f9d46}#b1:active{background:#157a34}
+#b2{background:#e0b800;color:#3b2a00}#b2:active{background:#b89400}
+#ov.end{pointer-events:none}
+#ov.end>div{pointer-events:auto}
+#xn{display:block;margin-top:8px;font-size:12px;color:#ffd6d6}
+#xt{display:block;box-sizing:border-box;width:min(340px,80vw);margin:6px auto 0;padding:6px;font-size:13px;color:#fff;background:#222;border:1px solid #888;border-radius:6px;resize:none}
+#xp{display:inline-block;margin-top:12px;padding:10px 24px;font-size:18px;font-weight:700;color:#fff;background:#000;border:2px solid #fff;border-radius:10px;text-decoration:none}
+#b1.retry{background:#c4161c}#b1.retry:active{background:#8e0f14}
+@media (orientation:landscape) and (max-height:520px){
+ #btns{padding:6px 10px calc(6px + env(safe-area-inset-bottom,0px));gap:8px}
+ #btns button{height:46px;font-size:18px;border-width:2px;border-radius:10px}
+ #sb{font-size:10px;gap:2px}#sbt{height:84px;margin:12px 0}
+ #ov h1{font-size:30px;margin:0 0 6px}#ov p{font-size:14px;margin:0 0 10px}
+ #ov.ghost>div{padding:6px 16px;margin-top:46px}#ov.ghost h1{font-size:22px;margin:0 0 2px}#ov.ghost p{font-size:12px;margin:0 0 4px}
+ #bk{gap:2px}#back{font-size:12px;padding:4px 8px}#cn{font-size:10px}
+ #tth{font-size:34px}#tth small{font-size:11px;margin-top:2px}.sec{margin:8px 0 4px}#cg{gap:5px}.cc{aspect-ratio:auto;padding:6px 2px}
+ #md{height:38px}#go{margin-top:10px;padding:8px 40px;font-size:20px}#mdd{font-size:12px;margin-top:4px}#hint{margin-top:6px;font-size:12px}
+}
+@media (orientation:landscape) and (max-height:520px) and (pointer:coarse){
+ #ov.ghost{justify-content:flex-end;align-items:flex-start;padding:0}
+ #ov.ghost>div{margin:calc(10px + env(safe-area-inset-top,0px)) calc(112px + env(safe-area-inset-right,0px)) 0 0;padding:0 12px;height:54px;box-sizing:border-box;display:flex;align-items:center;gap:10px;border-radius:8px}
+ #ov.ghost h1{font-size:20px;margin:0;white-space:nowrap}
+ #ov.ghost p{font-size:12px;margin:0;white-space:nowrap;line-height:1.2}
+}
+</style>
+</head>
+<body class="title">
+<div id="hud"><div id="tm"><div id="tmi"><svg id="tmsvg" viewBox="0 0 146 68"></svg></div></div></div>
+<div id="mesh"><canvas id="mcv"></canvas></div><div id="bk"><button id="back">◀ タイトル</button><div id="cn">Season33</div></div><canvas id="gas"></canvas><div id="sb"><div>カメラ</div><div id="sbv">0.00m</div><div id="sbt"><div id="sbk"></div></div></div><div id="btns"><button id="b1">1歩 ←</button><button id="b2">2歩 →</button></div>
+<div id="tt"><div id="ttw">
+  <h1 id="tth">FISHBONE<small>フィッシュボーン</small></h1>
+  <div class="sec">COURSE SELECT</div><div id="cg"></div><p id="hint"></p>
+  <div class="sec">PLAYER SELECT</div><div id="md"><button data-m="normal">山田さん</button><button data-m="bolt">ヴォルトマン</button><button data-m="vol">シスター・ボルダラー</button></div><div id="mdd"></div>
+  <button id="go">START</button>
+</div></div>
+<div id="ov" class="hide"><div><h1 id="ot"></h1><p id="om"></p><a id="xp" class="hide" target="_blank" rel="noopener noreferrer" href="#">Xにポストする</a><small id="xn" class="hide">投稿画面を開けませんでした。下の文をコピーして、Xに貼り付けてください。</small><textarea id="xt" class="hide" readonly rows="3"></textarea></div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ================= パラメータ(ここを書き換えて調整) =================
+
+// --- テキスト ---
+const COURSES=['Season33',null,null,null,null,null,null,null];   // コース名(nullはロック表示)
+const COURSE_INFO=['記念すべき初登場。ボーンの数は18本'];          // コース紹介文(COURSESと同じ順)
+const PLAYERS={                                                  // プレイヤー(name=名前 / desc=説明、\nで改行)
+  normal:{name:'山田さん',desc:'通常モード\n魔のエリアを攻略セヨ！'},
+  bolt:{name:'ヴォルトマン',desc:'アルティメットモード\n見えにくい視界で緑山を救え！'},
+  vol:{name:'シスター・ボルダラー',desc:'クレイジーモード\n見えにくい視界と大きな体を持つ壁の妖精となれ！'}
+};
+
+// --- コース(単位m) ---
+const PLATFORM_COUNT=4;      // 足場の数
+const STEP_SPACING=1.2;      // 足場の中心間隔
+const PLATFORM_RADIUS=.15;   // 足場の半径(直径30cm)
+const DECK_HEIGHT=1;         // スタート・ゴール台と足場上面の高さ
+const POND_HALF_WIDTH=3;     // 池の半幅(コースと直角方向。幅=2倍)
+const DECK_HALF_WIDTH=1.1;   // スタート・ゴール台の半幅
+const DECK_EDGE_OFFSET=.35;  // 立ち位置から台の池側の端までの距離
+const START_DECK_END=4;      // スタート台の後端z
+const GOAL_DECK_END=-9.6;    // ゴール台の奥端z
+
+// --- 障害物 ---
+const ROTATION_PERIOD=5;     // 軸が1周する秒数(全ボーン正回転=反時計)
+const BONE_ROWS=[[1,[1,4]],[1.5,[7]],[2,[1,3,6]],[2.5,[1,4,7]],[3,[2,5,8]],[3.5,[3,7]],[4,[2,4,6,8]]];   // [足場番号(.5は足場の間), [8角柱の辺番号(辺1=真上、反時計回りに増える)]]
+const BONE_LENGTH=2.53;      // ボーンの長さ(軸の中心から先端まで)
+const BONE_RADIUS=.15;       // ボーンの半径(直径30cm)
+const BONE_TIP_LENGTH=.45;   // 先端のグレー部分の長さ
+const AXIS_HEIGHT=DECK_HEIGHT+2.83;   // 軸の高さ
+const AXIS_X=-.3;            // 軸のx位置(プレイヤーから見て左がマイナス)
+const AXIS_SIDE=.3;          // 軸の8角形の1辺
+const TRUSS_X=5;             // トラスの塔のx位置(±)
+const TRUSS_FADE_OPACITY=.1; // 失敗時のスタート側トラス・モーター・ギヤボックスの不透明度
+
+// --- 当たり判定 ---
+const HIT_START=0;           // ボーン上の判定開始位置(軸中心からの距離)。0=ボーン全体 / BONE_LENGTH-BONE_TIP_LENGTH=グレー先端のみ
+const HIT_RIGHT_LIMIT=.12;   // 接触点がこれより右側(x>値)なら失敗にしない
+const BODIES={               // 体型。h=身長 t=進行方向の厚み seg=[高さ下,幅下,高さ上,幅上]の積層(足元基準)
+  normal:{h:1.74,t:.21,seg:[[0,.33,.77,.33],[.77,.33,1.155,.26],[1.155,.26,1.54,.40],[1.54,.16,1.74,.16]]},
+  bolt:{h:1.74,t:.21,seg:[[0,.33,.77,.33],[.77,.33,1.155,.26],[1.155,.26,1.54,.40],[1.54,.16,1.74,.16]]},
+  vol:{h:1.74,t:.21,seg:[[0,.33,.77,.33],[.77,.65,1.74,.65]]}
+};
+
+// --- 操作 ---
+const STEP_TIME=.25;         // 1行動(片足/両足)にかかる秒数
+const HOP_HEIGHT=.12;        // 歩くときの上下動
+const RETRY_GUARD_MS=700;    // 失敗・クリア表示の直後にリトライを受け付けない時間
+const DOUBLE_TAP_MS=350;     // ダブルタップ判定の間隔
+
+// --- カメラ ---
+const EYE_HEIGHT=1.6;        // 目の高さ(カーペット上面から)
+const FOV_LANDSCAPE=80;      // 縦の視野角(横画面)
+const FOV_PORTRAIT=100;      // 縦の視野角(縦画面。大きいほど広角)
+const CAM_DEFAULT_YAW=.15;   // 初期の向き(左が正, rad)
+const CAM_DEFAULT_PITCH=-.3; // 初期の上下の向き(下が負, rad)
+const CAM_BACK_MAX=1;        // シークバーで後ろに下げられる最大距離
+const LOOK_SENS=.004;        // プレイ中のドラッグ感度
+const ORBIT_SENS=.006;       // 失敗画面のドラッグ感度
+const GHOST_BACK=.25;        // この距離以上カメラを下げると操作キャラを薄く表示
+const GHOST_OPACITY={normal:.1,bolt:.1,vol:.2};   // 薄く表示するときの不透明度
+const FAIL_CAM_OFFSET=[6.2,.3,3.8];   // 失敗画面の初期カメラ位置(接触点からの相対x,y,z)
+const FAIL_CAM_TIME=1;       // 失敗画面でカメラが引く秒数
+const ORBIT_MIN=2,ORBIT_MAX=16;       // 失敗画面のズーム距離の範囲
+const TITLE_CAM={pos:[7.5,DECK_HEIGHT+2.6,-3],target:[0,DECK_HEIGHT+1.8,-3]};   // タイトル背景のカメラ(コースの真横)
+
+// --- 落水演出 ---
+const FALL_TIME=.9;          // 落下にかかる秒数
+const FALL_PUSH=.4;          // 右へ押される距離
+const FALL_DROP=3.4;         // 落下の深さ係数
+const FALL_TILT=1.2;         // 倒れる角度(rad)
+const FLOAT_Y=-1.02;         // シスター・ボルダラーが浮く足元の高さ
+const FLOAT_TILT=.45;        // シスター・ボルダラーが浮くときの傾き(rad)
+
+// --- 視界不良 ---
+const VOL_CIRCLE=.53;        // シスター・ボルダラー: 見える楕円の縦の直径(画面の短い辺に対する割合)
+const VOL_ASPECT=1.1;        // シスター・ボルダラー: 楕円の横幅÷縦幅
+const BOLT_BAR=.2;           // ヴォルトマン: 上下それぞれの隠す割合
+
+// --- 演出 ---
+const GAS_TIME=3.5;          // ゴール時の炭酸ガスを噴射する秒数
+
+// ================= 導出値(通常は変更不要) =================
+const H=DECK_HEIGHT,S=STEP_SPACING,GOAL=PLATFORM_COUNT+1,MAXS=GOAL*2;
+const AY=AXIS_HEIGHT,AXX=AXIS_X,BL=BONE_LENGTH,BR=BONE_RADIUS,PR=PLATFORM_RADIUS;
+const AR=AXIS_SIDE/(2*Math.sin(Math.PI/8)),SPEED=2*Math.PI/ROTATION_PERIOD;
+const zN=-DECK_EDGE_OFFSET,zF=-GOAL*S+DECK_EDGE_OFFSET;
+const orbHome=(()=>{const[x,y,z]=FAIL_CAM_OFFSET,d=Math.hypot(x,y,z);return{yaw:Math.atan2(x,z),pitch:Math.asin(y/d),dist:d};})();
+const faceAng=k=>(90+45*(k-1))*Math.PI/180;
+const orbToSlider=d=>(d-ORBIT_MIN)/(ORBIT_MAX-ORBIT_MIN);
+const $=id=>document.getElementById(id);
+
+// ================= シーン =================
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+document.body.prepend(renderer.domElement);
+const cv=renderer.domElement;
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x4fa8ff);
+scene.fog=new THREE.Fog(0x9fd0ff,10,40);
+const cam=new THREE.PerspectiveCamera(FOV_LANDSCAPE,1,.05,70);
+cam.rotation.order='YXZ';
+scene.add(new THREE.AmbientLight(0xffffff,.75));
+const sun=new THREE.DirectionalLight(0xffffff,.7);sun.position.set(3,8,4);scene.add(sun);
+
+// ----- コース -----
+const M=c=>new THREE.MeshLambertMaterial({color:c,side:THREE.DoubleSide});
+const box=(x0,x1,z0,z1,c,y0=-3,y1=0)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,y1-y0,z1-z0),M(c));m.position.set((x0+x1)/2,(y0+y1)/2,(z0+z1)/2);scene.add(m);};
+const DIRT=0x9a7650;
+box(-40,40,zN,30,DIRT);
+box(-40,40,-60,zF,DIRT);
+box(-40,-POND_HALF_WIDTH,zF,zN,DIRT);box(POND_HALF_WIDTH,40,zF,zN,DIRT);
+const water=new THREE.Mesh(new THREE.PlaneGeometry(2*POND_HALF_WIDTH,zN-zF).rotateX(-Math.PI/2),new THREE.MeshLambertMaterial({color:0x7a6238}));
+water.position.set(0,-.3,(zN+zF)/2);scene.add(water);
+
+const carpetStripes=add=>{add(1.4,0,0xc4161c);add(.12,-.76,0x111111);add(.12,.76,0x111111);};
+const carpet=(z0,z1)=>{const L=z1-z0,zc=(z0+z1)/2;carpetStripes((w,x,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,.03,L),M(c));m.position.set(x,H+.015,zc);scene.add(m);});};
+const vcarpet=(zf,dir)=>{const y0=-.3,y1=H+.03,hh=y1-y0;carpetStripes((w,x,c)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,hh,.03),M(c));m.position.set(x,(y0+y1)/2,zf+dir*.015);scene.add(m);});};
+carpet(GOAL_DECK_END,zF);carpet(zN,START_DECK_END);
+vcarpet(zN,-1);vcarpet(zF,1);
+box(-DECK_HALF_WIDTH,DECK_HALF_WIDTH,zN,START_DECK_END,0x141414,0,H);
+box(-DECK_HALF_WIDTH,DECK_HALF_WIDTH,GOAL_DECK_END,zF,0x141414,0,H);
+
+const platformGeo=new THREE.CylinderGeometry(PR,PR,3.2,24),platformMat=M(0xd81e24),capGeo=new THREE.CylinderGeometry(PR,PR,.8,24),capMat=M(0x9a9a9a);
+for(let i=1;i<=PLATFORM_COUNT;i++){
+  const p=new THREE.Mesh(platformGeo,platformMat);p.position.set(0,-1.4,-i*S);scene.add(p);
+  const g=new THREE.Mesh(capGeo,capMat);g.position.set(0,H-.4,-i*S);scene.add(g);
+}
+
+// ----- トラス・ギヤボックス・モーター -----
+const TW=.2,CR=[[-TW,-TW],[TW,-TW],[TW,TW],[-TW,TW]],GZ0=zN,GZ1=zF,BY=AY-.6;
+const trussMat=M(0x8c939b),startMat=M(0x8c939b),gearMat=M(0x474d55),motorMat=M(0x2f5d8a),bearMat=M(0x474d55);
+const fadeMats=[startMat,gearMat,motorMat];
+fadeMats.forEach(m=>m.transparent=true);
+function fadeStart(on){fadeMats.forEach(m=>{m.opacity=on?TRUSS_FADE_OPACITY:1;m.depthWrite=!on;});}
+const mkTruss=(z,mat)=>{
+  const TS=[],st=(a,b,c,d,e,f)=>TS.push([a,b,c,d,e,f]);
+  const tower=(cx,h)=>{const n=Math.round(h/.6),ph=h/n;
+    CR.forEach(([dx,dz])=>st(cx+dx,0,z+dz,cx+dx,h,z+dz));
+    for(let i=0;i<=n;i++)for(let k=0;k<4;k++){const[a,b]=CR[k],[c,d]=CR[(k+1)%4];st(cx+a,i*ph,z+b,cx+c,i*ph,z+d);if(i<n)st(cx+a,i*ph,z+b,cx+c,(i+1)*ph,z+d);}};
+  const beam=(x0,x1,cy)=>{const n=Math.round((x1-x0)/.55),px=(x1-x0)/n;
+    CR.forEach(([dy,dz])=>st(x0,cy+dy,z+dz,x1,cy+dy,z+dz));
+    for(let i=0;i<=n;i++)for(let k=0;k<4;k++){const[a,b]=CR[k],[c,d]=CR[(k+1)%4];st(x0+i*px,cy+a,z+b,x0+i*px,cy+c,z+d);if(i<n)st(x0+i*px,cy+a,z+b,x0+(i+1)*px,cy+c,z+d);}};
+  tower(-TRUSS_X,BY+.2);tower(TRUSS_X,BY+.2);beam(-TRUSS_X-.2,TRUSS_X+.2,BY);
+  const o=new THREE.Object3D(),u=new THREE.Vector3(0,1,0),d=new THREE.Vector3();
+  const im=new THREE.InstancedMesh(new THREE.CylinderGeometry(.03,.03,1,5),mat,TS.length);
+  TS.forEach((s,i)=>{d.set(s[3]-s[0],s[4]-s[1],s[5]-s[2]);const L=d.length();o.position.set((s[0]+s[3])/2,(s[1]+s[4])/2,(s[2]+s[5])/2);o.quaternion.setFromUnitVectors(u,d.normalize());o.scale.set(1,L,1);o.updateMatrix();im.setMatrixAt(i,o.matrix);});
+  im.frustumCulled=false;scene.add(im);
+};
+mkTruss(GZ0,startMat);mkTruss(GZ1,trussMat);
+const cub=(w,h,l,x,y,z,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,l),mat);m.position.set(x,y,z);scene.add(m);};
+cub(.9,.8,.6,AXX,AY,GZ0,gearMat);
+cub(.9,.6,.55,AXX+.9,AY-.1,GZ0,motorMat);
+cub(.7,.8,.4,AXX,AY,GZ1,bearMat);
+
+// ----- 軸とボーン -----
+const pivot=new THREE.Object3D();pivot.position.set(AXX,AY,0);scene.add(pivot);
+const axZ0=GZ0-.3,axZ1=GZ1+.2,axLen=axZ0-axZ1;   // ギヤボックスの面から軸受けの面まで
+function axisTex(){
+  const c=document.createElement('canvas');c.width=c.height=256;const g=c.getContext('2d');
+  g.fillStyle='#b01419';g.fillRect(0,0,256,256);g.strokeStyle='#000';g.lineWidth=9;
+  for(const o of[-256,0,256])for(const d of[0,34]){g.beginPath();g.moveTo(o+d,0);g.lineTo(o+d+256,256);g.stroke();}
+  const t=new THREE.CanvasTexture(c);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(1,axLen/(8*AXIS_SIDE));return t;
+}
+const ax=new THREE.Mesh(new THREE.CylinderGeometry(AR,AR,axLen,8).rotateX(Math.PI/2),new THREE.MeshLambertMaterial({map:axisTex()}));
+ax.position.z=(axZ0+axZ1)/2;ax.rotation.z=Math.PI/8;pivot.add(ax);
+const bones=[],boneGeo=new THREE.CylinderGeometry(BR,BR,BL-BONE_TIP_LENGTH,12).translate(0,(BL-BONE_TIP_LENGTH)/2,0),boneMat=M(0xe02020);
+const tipGeo=new THREE.CylinderGeometry(BR,BR,BONE_TIP_LENGTH,12).translate(0,BL-BONE_TIP_LENGTH/2,0),tipMat=M(0x9a9a9a);
+const hitMat=new THREE.MeshBasicMaterial({color:0x2f7bff});
+BONE_ROWS.forEach(([pi,faces])=>faces.forEach(f=>{
+  const a=faceAng(f),b=new THREE.Mesh(boneGeo,boneMat);b.add(new THREE.Mesh(tipGeo,tipMat));
+  b.position.z=-pi*S;b.rotation.z=a-Math.PI/2;pivot.add(b);
+  bones.push({a,z:-pi*S,m:b});
+}));
+function resetBones(){bones.forEach(b=>{b.m.material=boneMat;b.m.children[0].material=tipMat;b.m.visible=true;});}
+
+// ----- 次の足場カーソル -----
+const cone=new THREE.Mesh(new THREE.ConeGeometry(.13,.28,16).rotateX(Math.PI),new THREE.MeshBasicMaterial({color:0xffe14d}));
+const dot1=new THREE.Mesh(cone.geometry,new THREE.MeshBasicMaterial({color:0x2ee06a}));
+scene.add(cone,dot1);
+
+// ----- 失敗時の接触表示 -----
+const marker=new THREE.Mesh(new THREE.SphereGeometry(.09,16,12),new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false}));
+marker.renderOrder=30;marker.visible=false;scene.add(marker);
+const arrow=new THREE.Group(),arrowMat=new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false});
+[new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.5,8).translate(0,.25,0),arrowMat),new THREE.Mesh(new THREE.ConeGeometry(.07,.16,12).translate(0,.58,0),arrowMat)].forEach(m=>{m.renderOrder=30;arrow.add(m);});
+arrow.visible=false;scene.add(arrow);
+
+// ----- 操作キャラ(失敗画面・薄い表示) -----
+const avatar=new THREE.Group();avatar.visible=false;scene.add(avatar);
+function buildAvatarBody(){
+  avatar.clear();
+  const TH=.21,BLK=M(0x111111),SKIN=M(0xa8672f),GRY=M(0x8c8f94);
+  const box=(w,h,x,y,m)=>{avatar.add(new THREE.Mesh(new THREE.BoxGeometry(w,h,TH).translate(x,y,0),m));};
+  const loft=(seg,m,dw=0)=>{for(const[a,wa,b,wb]of seg){const n=Math.max(1,Math.round((b-a)/.05));
+    for(let i=0;i<n;i++){const y0=a+(b-a)*i/n,y1=a+(b-a)*(i+1)/n;box(wa+(wb-wa)*(i+.5)/n-dw,y1-y0,0,(y0+y1)/2,m);}}};
+  if(mode==='vol'){loft([[0,.33,.77,.33]],BLK);box(.65,.97,0,1.255,GRY);return;}
+  if(mode==='bolt'){
+    const m=M(0x0b0b0b);loft(bd.seg.slice(0,3),m);box(.16,.2,0,1.64,m);
+    const sh=new THREE.Shape();[[.05,.5],[.2,.5],[.06,.08],[.2,.08],[-.1,-.5],[-.02,-.04],[-.16,-.04]].forEach(([x,y],i)=>i?sh.lineTo(x,y):sh.moveTo(x,y));
+    const g=new THREE.ShapeGeometry(sh),Y=new THREE.MeshBasicMaterial({color:0xffd400,side:THREE.DoubleSide});
+    const bolt=(x,y,k,f)=>{const o=new THREE.Mesh(g,Y);o.scale.set(k,k,1);o.position.set(x,y,f*(TH/2+.004));if(f<0)o.rotation.y=Math.PI;avatar.add(o);};
+    bolt(0,1.15,.7,1);bolt(0,1.15,.7,-1);bolt(-.08,.4,.4,1);bolt(.08,.4,.4,1);return;
+  }
+  loft([[.42,.33,.77,.33]],BLK);loft([[0,.33,.42,.33]],SKIN);
+  loft([[.77,.33,1.155,.26],[1.155,.26,1.54,.40]],BLK,.10);
+  [-1,1].forEach(k=>box(.05,.68,k*.175,1.18,SKIN));
+  box(.16,.2,0,1.64,SKIN);
+}
+function buildAvatar(ghost){
+  buildAvatarBody();
+  if(ghost)avatar.traverse(o=>{if(o.material){o.material.transparent=true;o.material.opacity=GHOST_OPACITY[mode];o.material.depthWrite=false;}});
+}
+
+// ================= 状態 =================
+let xText='',state='title',T=0,time=0,s=0,anim=null,pz=0,hop=0,PH=Math.random()*Math.PI*2;
+let courseIdx=0,mode='normal',bd=BODIES.normal;
+let camYaw=CAM_DEFAULT_YAW,camPitch=CAM_DEFAULT_PITCH,camBack=0,playBack=0;
+let orbYaw=0,orbPitch=0,orbD=0,zoomT=0,fallT=0,endAt=0,meshOn='',ghostOn=false,drag=null,lastTap=0,sbDrag=false;
+const orbT=new THREE.Vector3(),camFrom=new THREE.Vector3(),lookFrom=new THREE.Vector3(),lookTmp=new THREE.Vector3(),endPos=new THREE.Vector3();
+const ov=$('ov');
+
+function setBtns(end){$('b1').textContent=end?'リトライ':'1歩 ←';$('b1').classList.toggle('retry',end);$('b2').classList.toggle('hide',end);}
+function showOv(t,m){
+  const end=state==='over'||state==='clear';
+  ov.classList.toggle('ghost',state==='over');ov.classList.toggle('end',end);
+  setBtns(end);if(end)endAt=performance.now();
+  $('ot').textContent=t;$('om').textContent=m;$('xp').classList.toggle('hide',state!=='clear');$('xn').classList.add('hide');$('xt').classList.add('hide');ov.classList.remove('hide');
+}
+function onHit(h){
+  fadeStart(true);zoomT=0;fallT=0;camFrom.copy(cam.position);
+  playBack=camBack;orbT.copy(h?h.p:new THREE.Vector3(0,H+2.2,pz-.6));
+  orbYaw=orbHome.yaw;orbPitch=orbHome.pitch;orbD=orbHome.dist;setSlider(orbToSlider(orbD));
+  const d=new THREE.Vector3();cam.getWorldDirection(d);lookFrom.copy(cam.position).addScaledVector(d,6);
+  buildAvatar();avatar.position.set(0,H+hop,pz);avatar.visible=true;
+  bones.forEach(b=>b.m.visible=true);
+  if(h){
+    h.b.m.material=hitMat;marker.position.copy(h.p);marker.visible=true;
+    arrow.position.copy(h.p).addScaledVector(h.n,.66);arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),h.n.clone().negate());arrow.visible=true;
+  }
+}
+function start(){
+  bd=BODIES[mode];PH=Math.random()*Math.PI*2;gas.length=0;gasT=0;fadeStart(false);setBtns(false);
+  avatar.visible=marker.visible=arrow.visible=false;avatar.rotation.z=0;resetBones();
+  cam.rotation.set(CAM_DEFAULT_PITCH,CAM_DEFAULT_YAW,0);
+  state='play';$('tt').classList.add('hide');document.body.classList.remove('title');
+  $('cn').textContent=COURSES[courseIdx]+' ・ '+PLAYERS[mode].name;
+  setSlider(playBack/CAM_BACK_MAX);T=0;time=0;s=0;anim=null;pz=0;hop=0;ov.classList.add('hide');
+}
+function toTitle(){
+  state='title';anim=null;s=0;pz=0;hop=0;time=0;PH=Math.random()*Math.PI*2;T=0;
+  fadeStart(false);avatar.visible=marker.visible=arrow.visible=false;resetBones();
+  gas.length=0;gasT=0;setBtns(false);setSlider(camBack/CAM_BACK_MAX);
+  ov.classList.add('hide');buildTitle();$('tt').classList.remove('hide');document.body.classList.add('title');
+}
+function lose(h){state='over';onHit(h);showOv('落水！',h&&h.front?'ボーンに接触してバランスを崩した':'ボーンに押された');}
+function win(){
+  state='clear';gasStart();const t=time.toFixed(3);
+  xText=PLAYERS[mode].name+'が'+COURSES[courseIdx]+'コースを'+t+'秒でクリアした！\n #フィッシュボーンゲーム';
+  $('xp').href='https://x.com/intent/post?text='+encodeURIComponent(xText);
+  showOv('クリア！','ゴールタイム：'+t+' 秒');
+}
+function go(n){
+  if(state!=='play'||anim)return;
+  const to=Math.min(s+n,MAXS);if(to===s)return;
+  anim={from:s,to,t:0,d:STEP_TIME*(to-s)};
+}
+
+// ================= 入力 =================
+const press=(id,n)=>$(id).addEventListener('pointerdown',e=>{
+  e.preventDefault();
+  if(state==='over'||state==='clear'){if(n===1&&performance.now()-endAt>RETRY_GUARD_MS)start();return;}
+  go(n);
+});
+press('b1',1);press('b2',2);
+$('xp').addEventListener('click',e=>{
+  e.preventDefault();
+  const w=window.open($('xp').href,'_blank');
+  if(w){w.opener=null;return;}
+  const ta=$('xt');ta.value=xText;$('xn').classList.remove('hide');ta.classList.remove('hide');ta.focus();ta.select();
+  try{navigator.clipboard.writeText(xText);}catch(_){}
+});
+addEventListener('keydown',e=>{
+  if(e.repeat)return;
+  if(e.key==='Escape'&&state!=='title'){toTitle();return;}
+  if(state==='over'||state==='clear'){
+    if(['ArrowLeft','ArrowRight','1','2','Enter',' '].includes(e.key)&&performance.now()-endAt>RETRY_GUARD_MS)start();
+    return;
+  }
+  if(e.key==='ArrowLeft'||e.key==='1')go(1);
+  else if(e.key==='ArrowRight'||e.key==='2')go(2);
+  else if((e.key==='Enter'||e.key===' ')&&state!=='play')start();
+});
+cv.addEventListener('pointerdown',e=>{if(state!=='play'&&state!=='over')return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,m:0};cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.m+=Math.abs(dx)+Math.abs(dy);
+  if(state==='over'){orbYaw-=dx*ORBIT_SENS;orbPitch=Math.max(-.15,Math.min(1.45,orbPitch+dy*ORBIT_SENS));}
+  else{camYaw=Math.max(-1.3,Math.min(1.3,camYaw+dx*LOOK_SENS));camPitch=Math.max(-1.3,Math.min(.6,camPitch+dy*LOOK_SENS));}
+  drag.x=e.clientX;drag.y=e.clientY;
+});
+cv.addEventListener('pointerup',e=>{
+  if(!drag||e.pointerId!==drag.id)return;
+  if(drag.m<8){
+    const n=performance.now();
+    if(n-lastTap<DOUBLE_TAP_MS){
+      if(state==='over'){orbYaw=orbHome.yaw;orbPitch=orbHome.pitch;setSlider(orbToSlider(orbHome.dist));}
+      else{camYaw=CAM_DEFAULT_YAW;camPitch=CAM_DEFAULT_PITCH;}
+    }
+    lastTap=n;
+  }
+  drag=null;
+});
+cv.addEventListener('pointercancel',()=>{drag=null;});
+cv.addEventListener('wheel',e=>{
+  if(state==='over')setSlider(orbToSlider(orbD)+e.deltaY*.0005);
+  else if(state==='play')setSlider(camBack/CAM_BACK_MAX+e.deltaY*.0005);
+  else return;
+  e.preventDefault();
+},{passive:false});
+
+// ================= 当たり判定 =================
+function bodyHW(y){
+  for(const[a,wa,b,wb]of bd.seg){if(y<=b){const k=b>a?Math.max(0,(y-a)/(b-a)):0;return(wa+(wb-wa)*k)/2;}}
+  return bd.seg[bd.seg.length-1][3]/2;
+}
+function hit(){
+  const cand=[],L=BL-HIT_START,N=Math.ceil(L/.02),yb=H+hop,ht=bd.t/2,cl=(v,a,b)=>Math.min(Math.max(v,a),b);
+  for(const b of bones){
+    const dz=b.z-pz;if(Math.abs(dz)>ht+BR+.01)continue;
+    const th=b.a+SPEED*T+PH,cs=Math.cos(th),sn=Math.sin(th);
+    for(let k=0;k<=N;k++){
+      const r=HIT_START+L*k/N,x=AXX+r*cs,y=AY+r*sn,yr=y-yb,yc=cl(yr,0,bd.h);
+      const d=Math.hypot(Math.max(0,Math.abs(x)-bodyHW(yc)),Math.max(0,Math.abs(dz)-ht),Math.abs(yr-yc));
+      if(d<BR&&x<=HIT_RIGHT_LIMIT)cand.push({b,x,y,d});
+    }
+  }
+  if(!cand.length)return false;
+  let m=cand[0];for(const c of cand)if(c.d<m.d)m=c;
+  const ties=cand.filter(c=>c.b===m.b&&c.d<=m.d+.002),best=ties[ties.length>>1];
+  const yc=cl(best.y-yb,0,bd.h),hw=bodyHW(yc);
+  const q=new THREE.Vector3(best.x,best.y,best.b.z),bp=new THREE.Vector3(cl(best.x,-hw,hw),yb+yc,pz+cl(best.b.z-pz,-ht,ht)),n=bp.clone().sub(q);
+  if(n.length()<1e-4)n.set(1,0,0);
+  n.normalize();
+  best.n=n;best.p=q.clone().addScaledVector(n,BR);best.front=n.z>0&&Math.abs(n.z)>Math.hypot(n.x,n.y);
+  return best;
+}
+
+// ================= 画面表示(タイム・視界不良・シークバー・ガス) =================
+const SEGS={0:'abcdef',1:'bc',2:'abdeg',3:'abcdg',4:'bcfg',5:'acdfg',6:'acdefg',7:'abc',8:'abcdefg',9:'abcdfg'};
+const tmSvg=$('tmsvg'),tmDig=[];let tmLast=-1;
+(function(){
+  const NS='http://www.w3.org/2000/svg',
+  hx=(cx,cy,l,t)=>[[cx-l/2,cy],[cx-l/2+t/2,cy-t/2],[cx+l/2-t/2,cy-t/2],[cx+l/2,cy],[cx+l/2-t/2,cy+t/2],[cx-l/2+t/2,cy+t/2]],
+  vx=(cx,cy,l,t)=>[[cx,cy-l/2],[cx+t/2,cy-l/2+t/2],[cx+t/2,cy+l/2-t/2],[cx,cy+l/2],[cx-t/2,cy+l/2-t/2],[cx-t/2,cy-l/2+t/2]];
+  const G={a:hx(19,4,30,7),g:hx(19,34,30,7),d:hx(19,64,30,7),f:vx(4,19.5,27,7),b:vx(34,19.5,27,7),e:vx(4,48.5,27,7),c:vx(34,48.5,27,7)};
+  [0,46,106].forEach(ox=>{const d={};for(const k in G){const p=document.createElementNS(NS,'polygon');p.setAttribute('points',G[k].map(q=>(q[0]+ox)+','+q[1]).join(' '));tmSvg.appendChild(p);d[k]=p;}tmDig.push(d);});
+  const dot=document.createElementNS(NS,'circle');dot.setAttribute('cx',94);dot.setAttribute('cy',63);dot.setAttribute('r',4);dot.setAttribute('fill','#fff');tmSvg.appendChild(dot);
+})();
+function drawTime(t){
+  const v=Math.min(Math.floor(t*10),999);if(v===tmLast)return;tmLast=v;
+  [Math.floor(v/100)%10,Math.floor(v/10)%10,v%10].forEach((n,i)=>{for(const k in tmDig[i])tmDig[i][k].setAttribute('fill',SEGS[n].includes(k)?'#fff':'#1b1b1b');});
+}
+drawTime(0);
+
+const mcv=$('mcv'),mx=mcv.getContext('2d');let mKey='';
+function drawMesh(kind){
+  const w=innerWidth,h=innerHeight,d=Math.min(devicePixelRatio||1,2),key=kind+w+'x'+h+'@'+d;if(key===mKey)return;mKey=key;
+  mcv.width=Math.round(w*d);mcv.height=Math.round(h*d);mx.setTransform(d,0,0,d,0,0);mx.clearRect(0,0,w,h);
+  if(kind==='bolt'){
+    mx.fillStyle='#2b2d31';mx.fillRect(0,0,w,h);mx.globalCompositeOperation='destination-out';mx.beginPath();
+    for(let y=0;y<h+12;y+=12)for(let x=0;x<w+12;x+=12){mx.moveTo(x+5,y+3);mx.arc(x+3,y+3,2,0,6.2832);mx.moveTo(x+11,y+9);mx.arc(x+9,y+9,2,0,6.2832);}
+    mx.fill();mx.globalCompositeOperation='source-over';mx.fillStyle='#15161a';mx.fillRect(0,0,w,h*BOLT_BAR);mx.fillRect(0,h*(1-BOLT_BAR),w,h*BOLT_BAR);
+  }else{
+    const Ry=Math.min(w,h)*VOL_CIRCLE/2,Rx=Ry*VOL_ASPECT;
+    mx.fillStyle='rgba(150,152,156,.3)';mx.fillRect(0,0,w,h);
+    mx.strokeStyle='rgba(60,62,66,.8)';mx.lineWidth=3;mx.beginPath();
+    for(let x=0;x<w;x+=9){mx.moveTo(x+1.5,0);mx.lineTo(x+1.5,h);}
+    for(let y=0;y<h;y+=9){mx.moveTo(0,y+1.5);mx.lineTo(w,y+1.5);}
+    mx.stroke();mx.fillStyle='#000';mx.beginPath();mx.rect(0,0,w,h);mx.moveTo(w/2+Rx,h/2);mx.ellipse(w/2,h/2,Rx,Ry,0,0,6.2832,true);mx.fill('evenodd');
+  }
+}
+
+const sbt=$('sbt'),sbk=$('sbk'),sbv=$('sbv');
+function setSlider(v){   // v=つまみの位置(0〜1)。プレイ中=カメラの後退量 / 失敗画面=注視点からの距離
+  v=Math.max(0,Math.min(1,v));
+  if(state==='over'){orbD=ORBIT_MIN+v*(ORBIT_MAX-ORBIT_MIN);sbv.textContent=orbD.toFixed(1)+'m';}
+  else{camBack=playBack=v*CAM_BACK_MAX;sbv.textContent=camBack.toFixed(2)+'m';}
+  sbk.style.top=(v*100)+'%';
+}
+const sbMove=e=>{const r=sbt.getBoundingClientRect();setSlider((e.clientY-r.top)/r.height);};
+sbt.addEventListener('pointerdown',e=>{e.preventDefault();sbDrag=true;sbt.setPointerCapture(e.pointerId);sbMove(e);});
+sbt.addEventListener('pointermove',e=>{if(sbDrag)sbMove(e);});
+const sbEnd=()=>{sbDrag=false;};sbt.addEventListener('pointerup',sbEnd);sbt.addEventListener('pointercancel',sbEnd);
+
+const gasC=$('gas'),gx=gasC.getContext('2d'),gas=[];let gasT=0;
+function gasStart(){gasT=GAS_TIME;gas.length=0;}
+function gasStep(dt){
+  const w=gasC.width,h=gasC.height;
+  if(gasT>0){gasT-=dt;for(const sx of[.04,.96])for(let i=0;i<3;i++){const a=-Math.PI/2+(Math.random()-.5)*.5,v=h*(.9+Math.random()*.7);gas.push({x:w*sx,y:h+10,vx:Math.cos(a)*v,vy:Math.sin(a)*v,r:6+Math.random()*6,t:0,L:1+Math.random()*.8});}}
+  gx.clearRect(0,0,w,h);gx.fillStyle='#fff';
+  const dr=Math.pow(.25,dt);
+  for(let i=gas.length-1;i>=0;i--){
+    const p=gas[i];p.t+=dt;if(p.t>p.L){gas.splice(i,1);continue;}
+    p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=dr;p.vy*=dr;const k=p.t/p.L;
+    gx.globalAlpha=.55*(1-k);gx.beginPath();gx.arc(p.x,p.y,p.r+k*38,0,6.283);gx.fill();
+  }
+  gx.globalAlpha=1;
+}
+function resize(){
+  const w=innerWidth,h=innerHeight;gasC.width=w;gasC.height=h;renderer.setSize(w,h);
+  cam.aspect=w/h;cam.fov=w<h?FOV_PORTRAIT:FOV_LANDSCAPE;cam.updateProjectionMatrix();
+}
+addEventListener('resize',resize);resize();
+
+// ================= メインループ =================
+let last=performance.now();
+function loop(now){
+  const dt=Math.min((now-last)/1000,.05);last=now;
+  if(state!=='over')T+=dt;
+  if(state==='play'){
+    time+=dt;
+    if(anim){
+      anim.t+=dt;const k=Math.min(anim.t/anim.d,1),pos=anim.from+(anim.to-anim.from)*k,ph=k*(anim.to-anim.from);
+      pz=-pos*S/2;hop=HOP_HEIGHT*Math.sin(Math.PI*(ph-Math.floor(ph)));
+      if(k>=1){s=anim.to;anim=null;pz=-s*S/2;hop=0;if(s===MAXS)win();}
+    }
+    if(state==='play'){const h=hit();if(h)lose(h);}
+  }
+  pivot.rotation.z=SPEED*T+PH;
+  {
+    const ok=state==='play'&&!anim,n1=Math.min(s+1,MAXS),n2=Math.min(s+2,MAXS);
+    const put=(m,n,vis)=>{m.visible=ok&&vis;const big=n%2===0;m.scale.setScalar(big?.8:.4);m.material.depthTest=big;m.renderOrder=big?0:10;m.position.set(0,H+(big?.36:.2)+(big?.05:.03)*Math.sin(T*5),-n*S/2);};
+    put(dot1,n1,n1>s);put(cone,n2,n2>n1);
+  }
+  if(state==='over'){
+    fallT+=dt;
+    const u=Math.min(fallT/FALL_TIME,1);let ay=H+hop-FALL_DROP*u*u,rz=-FALL_TILT*u;
+    if(mode==='vol'){ay=Math.max(ay,FLOAT_Y+.04*Math.sin(fallT*3));rz=-FLOAT_TILT*u;}
+    avatar.position.set(FALL_PUSH*u,ay,pz);avatar.rotation.z=rz;
+    zoomT=Math.min(zoomT+dt/FAIL_CAM_TIME,1);const k=1-Math.pow(1-zoomT,3);
+    endPos.set(orbD*Math.sin(orbYaw)*Math.cos(orbPitch),orbD*Math.sin(orbPitch),orbD*Math.cos(orbYaw)*Math.cos(orbPitch)).add(orbT);endPos.y=Math.max(endPos.y,.3);
+    cam.position.lerpVectors(camFrom,endPos,k);
+    cam.lookAt(lookTmp.lerpVectors(lookFrom,orbT,k));
+  }else if(state==='title'){
+    cam.position.set(...TITLE_CAM.pos);cam.lookAt(...TITLE_CAM.target);
+  }else{
+    cam.position.set(0,H+.03+EYE_HEIGHT+hop,pz+camBack);cam.rotation.set(camPitch,camYaw,0);
+  }
+  drawTime(time);
+  {
+    const g=state==='play'&&camBack>=GHOST_BACK;
+    if(g!==ghostOn){ghostOn=g;if(g)buildAvatar(true);else if(state==='play')avatar.visible=false;}
+    if(g){avatar.visible=true;avatar.rotation.set(0,0,0);avatar.position.set(0,H+hop,pz);}
+  }
+  {
+    const want=state==='play'&&mode!=='normal'?mode:'';
+    if(want!==meshOn){meshOn=want;const m=$('mesh');m.className=want;m.style.display=want?'block':'none';}
+    if(want)drawMesh(want);
+  }
+  gasStep(dt);renderer.render(scene,cam);
+  requestAnimationFrame(loop);
+}
+
+// ================= タイトル画面 =================
+function buildTitle(){
+  const cg=$('cg');cg.innerHTML='';
+  COURSES.forEach((n,i)=>{
+    const b=document.createElement('button');b.className='cc'+(n?'':' lk')+(i===courseIdx?' on':'');
+    b.innerHTML='<i>'+String(i+1).padStart(2,'0')+'</i><b>'+(n||'LOCKED')+'</b>';b.disabled=!n;
+    b.onclick=()=>{if(n){courseIdx=i;buildTitle();}};cg.appendChild(b);
+  });
+  $('md').className='p'+Object.keys(PLAYERS).indexOf(mode);
+  $('mdd').textContent=PLAYERS[mode].desc;$('hint').textContent=COURSE_INFO[courseIdx]||'';
+}
+document.querySelectorAll('#md button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;buildTitle();});
+$('go').onclick=start;
+$('back').onclick=toTitle;
+buildTitle();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
